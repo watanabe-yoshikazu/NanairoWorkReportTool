@@ -7,6 +7,26 @@ namespace NanairoWorkReportTool.Infrastructure.Tests;
 public sealed class PersistenceTests
 {
     [Fact]
+    public async Task Settings_LoadsLegacyJsonWithoutLastNwrPath()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), $"NanairoSettings-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(directory);
+        try
+        {
+            await File.WriteAllTextAsync(
+                Path.Combine(directory, "settings.json"),
+                "{\"ReporterName\":\"渡辺\",\"RecentFiles\":[],\"WorkContentHistory\":[]}",
+                Encoding.UTF8);
+
+            var settings = await new SettingsStore(directory).LoadAsync();
+
+            Assert.Equal("渡辺", settings.ReporterName);
+            Assert.Null(settings.LastNwrFilePath);
+        }
+        finally { Directory.Delete(directory, true); }
+    }
+
+    [Fact]
     public async Task Nwr_RoundTripsUtf8Json()
     {
         var directory = Path.Combine(Path.GetTempPath(), $"NanairoTests-{Guid.NewGuid():N}");

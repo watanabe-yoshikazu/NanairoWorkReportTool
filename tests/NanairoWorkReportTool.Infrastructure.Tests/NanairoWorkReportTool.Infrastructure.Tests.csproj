@@ -13,5 +13,6 @@
   <ItemGroup>
     <ProjectReference Include="../../src/NanairoWorkReportTool.Core/NanairoWorkReportTool.Core.csproj" />
     <ProjectReference Include="../../src/NanairoWorkReportTool.Infrastructure/NanairoWorkReportTool.Infrastructure.csproj" />
+    <ProjectReference Include="../../src/NanairoWorkReportTool/NanairoWorkReportTool.csproj" />
   </ItemGroup>
 </Project>

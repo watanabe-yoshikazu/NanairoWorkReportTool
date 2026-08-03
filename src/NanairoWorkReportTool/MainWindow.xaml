@@ -43,21 +43,42 @@
         </Grid.RowDefinitions>
 
         <Border Grid.Row="0" Background="#111827" Padding="10">
-            <DockPanel>
-                <StackPanel DockPanel.Dock="Left" Orientation="Horizontal">
-                    <Button Content="新規作成" Command="{Binding NewCommand}"/>
-                    <Button Content="ファイルを開く" Command="{Binding OpenCommand}"/>
-                    <Button Content="保存 (.nwr)" Command="{Binding SaveCommand}"/>
-                    <Button Content="チェック" Command="{Binding CheckCommand}" Background="#DBEAFE"/>
-                    <Button Content="Excel出力" Command="{Binding ExportExcelCommand}" Background="#DCFCE7"/>
-                    <Button Content="PDF出力" Command="{Binding ExportPdfCommand}" Background="#FEE2E2"/>
-                </StackPanel>
-                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right">
-                    <ComboBox Width="260" ItemsSource="{Binding RecentFiles}" x:Name="RecentFilesCombo" ToolTip="最近使用したファイル"/>
-                    <Button Content="最近のファイルを開く" Command="{Binding OpenRecentCommand}" CommandParameter="{Binding SelectedItem, ElementName=RecentFilesCombo}"/>
-                    <Button Content="祝日情報更新" Command="{Binding UpdateHolidaysCommand}"/>
-                </StackPanel>
-            </DockPanel>
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <DockPanel Grid.Row="0">
+                    <StackPanel DockPanel.Dock="Left" Orientation="Horizontal">
+                        <Button Content="新規作成" Command="{Binding NewCommand}"/>
+                        <Button Content="ファイルを開く" Command="{Binding OpenCommand}"/>
+                        <Button Content="保存 (.nwr)" Command="{Binding SaveCommand}"/>
+                        <Button Content="チェック" Command="{Binding CheckCommand}" Background="#DBEAFE"/>
+                        <Button Content="Excel出力" Command="{Binding ExportExcelCommand}" Background="#DCFCE7"/>
+                        <Button Content="PDF出力" Command="{Binding ExportPdfCommand}" Background="#FEE2E2"/>
+                    </StackPanel>
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right">
+                        <ComboBox Width="260" ItemsSource="{Binding RecentFiles}" x:Name="RecentFilesCombo" ToolTip="最近使用したファイル"/>
+                        <Button Content="最近のファイルを開く" Command="{Binding OpenRecentCommand}" CommandParameter="{Binding SelectedItem, ElementName=RecentFilesCombo}"/>
+                        <Button Content="祝日情報更新" Command="{Binding UpdateHolidaysCommand}"/>
+                    </StackPanel>
+                </DockPanel>
+                <Border Grid.Row="1" Margin="4,8,4,0" Padding="8,4" CornerRadius="5"
+                        HorizontalAlignment="Stretch" ToolTip="{Binding DocumentStatePath}">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="Background" Value="#DCFCE7"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsDocumentStateAttention}" Value="True">
+                                    <Setter Property="Background" Value="#FEF3C7"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <TextBlock Text="{Binding DocumentStateText}" HorizontalAlignment="Center"
+                               Foreground="#111827" FontWeight="SemiBold"/>
+                </Border>
+            </Grid>
         </Border>
 
         <Border Grid.Row="1" Style="{StaticResource Card}" Margin="8,8,8,4">

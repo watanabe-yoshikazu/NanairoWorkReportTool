@@ -34,6 +34,9 @@ public partial class MainWindowViewModel : ObservableObject
     [ObservableProperty] private string statusMessage = "準備中です…";
     [ObservableProperty] private string targetMonthText = DateTime.Today.ToString("yyyy/MM");
     [ObservableProperty] private string? currentFilePath;
+    [ObservableProperty] private string documentStateText = "準備中です…";
+    [ObservableProperty] private string? documentStatePath;
+    [ObservableProperty] private bool isDocumentStateAttention = true;
 
     public ObservableCollection<ValidationIssue> ValidationIssues { get; } = [];
     public ObservableCollection<string> RecentFiles { get; } = [];
@@ -85,14 +88,42 @@ public partial class MainWindowViewModel : ObservableObject
                 {
                     var recovery = await documentStore.LoadAsync(settingsStore.RecoveryPath);
                     SetDocument(recovery, null, true);
+                    SetDocumentState("自動復旧データ（未保存）", settingsStore.RecoveryPath, true);
                     StatusMessage = "前回の自動復旧データを開きました。";
                     _ = UpdateHolidayCacheInBackgroundAsync();
                     return;
                 }
                 catch { }
             }
+
+            var lastNwrPath = settings.LastNwrFilePath;
+            var hasValidLastNwrPath = IsNwrPath(lastNwrPath) && File.Exists(lastNwrPath);
+            if (hasValidLastNwrPath)
+            {
+                try
+                {
+                    var previous = await documentStore.LoadAsync(lastNwrPath!);
+                    SetDocument(previous, lastNwrPath, false);
+                    AddRecent(lastNwrPath!);
+                    SetDocumentState($"編集中: {Path.GetFileName(lastNwrPath)}", lastNwrPath, false);
+                    StatusMessage = $"前回の {Path.GetFileName(lastNwrPath)} を開きました。";
+                    _ = UpdateHolidayCacheInBackgroundAsync();
+                    return;
+                }
+                catch { }
+            }
+
             await CreateNewMonthAsync(DateTime.Today, false);
-            StatusMessage = "入力を開始できます。";
+            var lastNwrCouldNotBeOpened = !string.IsNullOrWhiteSpace(lastNwrPath) && hasValidLastNwrPath;
+            SetDocumentState(
+                lastNwrCouldNotBeOpened
+                    ? "新規・未保存（前回の .nwr を開けませんでした）"
+                    : "新規・未保存（前回の .nwr はありません）",
+                lastNwrPath,
+                true);
+            StatusMessage = lastNwrCouldNotBeOpened
+                ? "前回の .nwr を読み込めないため、新規状態で開きました。"
+                : "新規状態で入力を開始できます。";
             _ = UpdateHolidayCacheInBackgroundAsync();
         }
         finally
@@ -107,6 +138,7 @@ public partial class MainWindowViewModel : ObservableObject
         if (!await ConfirmChangeAsync()) return;
         var month = ParseTargetMonth() ?? DateTime.Today;
         await CreateNewMonthAsync(month, true);
+        SetDocumentState("新規・未保存", null, true);
     }
 
     [RelayCommand]
@@ -120,6 +152,7 @@ public partial class MainWindowViewModel : ObservableObject
         }
         if (!await ConfirmChangeAsync()) return;
         await CreateNewMonthAsync(month.Value, true);
+        SetDocumentState("新規・未保存", null, true);
     }
 
     [RelayCommand]
@@ -139,11 +172,14 @@ public partial class MainWindowViewModel : ObservableObject
             if (dialog.ShowDialog() != true) return;
             path = dialog.FileName;
         }
+        CancelRecoverySave();
         await documentStore.SaveAsync(path, Document);
         CurrentFilePath = path;
         IsDirty = false;
         AddRecent(path);
         CaptureHistory();
+        settings.LastNwrFilePath = path;
+        SetDocumentState($"編集中: {Path.GetFileName(path)}", path, false);
         await SaveSettingsAsync();
         if (File.Exists(settingsStore.RecoveryPath)) File.Delete(settingsStore.RecoveryPath);
         StatusMessage = "保存しました。";
@@ -227,11 +263,27 @@ public partial class MainWindowViewModel : ObservableObject
     {
         try
         {
-            var loaded = string.Equals(Path.GetExtension(path), ".xlsx", StringComparison.OrdinalIgnoreCase)
+            var isExcel = string.Equals(Path.GetExtension(path), ".xlsx", StringComparison.OrdinalIgnoreCase);
+            var isNwr = IsNwrPath(path);
+            var loaded = isExcel
                 ? await excelReportService.ImportAsync(path)
                 : await documentStore.LoadAsync(path);
             SetDocument(loaded, path, false);
             AddRecent(path);
+            if (isExcel)
+            {
+                SetDocumentState("Excelから読み込み（.nwr 未保存）", path, true);
+            }
+            else if (isNwr)
+            {
+                settings.LastNwrFilePath = path;
+                SetDocumentState($"編集中: {Path.GetFileName(path)}", path, false);
+                await SaveSettingsAsync();
+            }
+            else
+            {
+                SetDocumentState("読み込みデータ（.nwr 未保存）", path, true);
+            }
             StatusMessage = $"{Path.GetFileName(path)} を開きました。";
         }
         catch (Exception exception)
@@ -315,6 +367,7 @@ public partial class MainWindowViewModel : ObservableObject
 
     private void SetDocument(WorkReportDocument value, string? path, bool dirty)
     {
+        CancelRecoverySave();
         suppressChanges = true;
         Unsubscribe(Document);
         Document = value;
@@ -324,6 +377,13 @@ public partial class MainWindowViewModel : ObservableObject
         IsDirty = dirty;
         suppressChanges = false;
         RefreshSummaryAndValidation();
+    }
+
+    private void SetDocumentState(string text, string? path, bool attention)
+    {
+        DocumentStateText = text;
+        DocumentStatePath = path;
+        IsDocumentStateAttention = attention;
     }
 
     private void Subscribe(WorkReportDocument value)
@@ -375,7 +435,7 @@ public partial class MainWindowViewModel : ObservableObject
 
     private void ScheduleRecoverySave()
     {
-        recoveryCancellation?.Cancel();
+        CancelRecoverySave();
         recoveryCancellation = new CancellationTokenSource();
         var token = recoveryCancellation.Token;
         _ = Task.Run(async () =>
@@ -388,6 +448,12 @@ public partial class MainWindowViewModel : ObservableObject
             catch (OperationCanceledException) { }
             catch { }
         }, token);
+    }
+
+    private void CancelRecoverySave()
+    {
+        recoveryCancellation?.Cancel();
+        recoveryCancellation = null;
     }
 
     private async Task RunBusyAsync(Func<Task> action)
@@ -436,6 +502,9 @@ public partial class MainWindowViewModel : ObservableObject
         return !IsDirty;
     }
     private static bool ConfirmOverwrite(string path) => !File.Exists(path) || MessageBox.Show($"{Path.GetFileName(path)} は既に存在します。上書きしますか？", "上書き確認", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes;
+    private static bool IsNwrPath(string? path)
+        => !string.IsNullOrWhiteSpace(path)
+           && string.Equals(Path.GetExtension(path), ".nwr", StringComparison.OrdinalIgnoreCase);
     private DateTime? ParseTargetMonth() => DateTime.TryParseExact(TargetMonthText.Trim(), ["yyyy/MM", "yyyy/M"], null, System.Globalization.DateTimeStyles.None, out var month) ? new DateTime(month.Year, month.Month, 1) : null;
 
     private static void ShowOutputCompleted(string excelPath, string? pdfPath)
