@@ -1,0 +1,2 @@
+# NanairoWorkReportTool
+ナナイロ様へ毎月提出する作業報告書を作成するためのWPFデスクトップアプリケーション
