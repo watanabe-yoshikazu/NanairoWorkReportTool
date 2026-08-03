@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/NanairoWorkReportTool.Core/NanairoWorkReportTool.Core.csproj" />
+    <Project Path="src/NanairoWorkReportTool.Infrastructure/NanairoWorkReportTool.Infrastructure.csproj" />
+    <Project Path="src/NanairoWorkReportTool/NanairoWorkReportTool.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/NanairoWorkReportTool.Core.Tests/NanairoWorkReportTool.Core.Tests.csproj" />
+    <Project Path="tests/NanairoWorkReportTool.Infrastructure.Tests/NanairoWorkReportTool.Infrastructure.Tests.csproj" />
+  </Folder>
+</Solution>
+
