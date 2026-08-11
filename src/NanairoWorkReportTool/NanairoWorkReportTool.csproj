@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <UseWPF>true</UseWPF>
+    <AssemblyName>NanairoWorkReportTool</AssemblyName>
+    <RootNamespace>NanairoWorkReportTool</RootNamespace>
+    <ApplicationIcon />
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>true</SelfContained>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\NanairoWorkReportTool.Core\NanairoWorkReportTool.Core.csproj" />
+    <ProjectReference Include="..\NanairoWorkReportTool.Infrastructure\NanairoWorkReportTool.Infrastructure.csproj" />
+    <PackageReference Include="CommunityToolkit.Mvvm" />
+  </ItemGroup>
+</Project>
+

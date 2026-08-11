@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\NanairoWorkReportTool.Core\NanairoWorkReportTool.Core.csproj" />
+    <PackageReference Include="DocumentFormat.OpenXml" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Assets\ReportTemplate.xlsx" />
+    <EmbeddedResource Include="Assets\holidays.csv" />
+  </ItemGroup>
+</Project>
