@@ -150,7 +150,8 @@
                 </StackPanel>
             </DockPanel>
             <DataGrid Grid.Row="1" x:Name="EntriesGrid" ItemsSource="{Binding Document.Entries}" AutoGenerateColumns="False"
-                      CanUserAddRows="False" SelectionMode="Extended" SelectionUnit="FullRow" RowHeight="54"
+                      CanUserAddRows="False" CanUserDeleteRows="False" PreviewKeyDown="EntriesGrid_PreviewKeyDown"
+                      SelectionMode="Extended" SelectionUnit="FullRow" RowHeight="54"
                       HeadersVisibility="Column" GridLinesVisibility="All" FrozenColumnCount="4">
                 <DataGrid.RowStyle>
                     <Style TargetType="DataGridRow">

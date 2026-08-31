@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using NanairoWorkReportTool.Core.Domain;
 using NanairoWorkReportTool.ViewModels;
 
@@ -50,6 +51,15 @@ public partial class MainWindow : Window
     }
     private void BulkContent_Click(object sender, RoutedEventArgs e) => ViewModel.ApplyWorkContent(SelectedEntries(), BulkContentCombo.Text);
     private void BulkHoliday_Click(object sender, RoutedEventArgs e) => ViewModel.ApplyCompanyHoliday(SelectedEntries(), BulkHolidayNameText.Text);
+
+    private void EntriesGrid_PreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key != Key.Delete || Keyboard.FocusedElement is TextBox or ComboBox) return;
+        var entries = SelectedEntries().ToArray();
+        if (entries.Length == 0) return;
+        ViewModel.ResetEntries(entries);
+        e.Handled = true;
+    }
 
     private void ValidationGrid_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
     {

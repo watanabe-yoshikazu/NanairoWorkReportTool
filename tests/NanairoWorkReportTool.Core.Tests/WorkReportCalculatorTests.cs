@@ -64,4 +64,32 @@ public sealed class WorkReportCalculatorTests
         Assert.Equal(1199, result.LowerBufferMinutes);
         Assert.Equal(2, result.AvailablePaidLeaveDays);
     }
+
+    [Fact]
+    public void ResetToInitialState_RestoresTheDayDefaultValues()
+    {
+        var document = _calculator.CreateMonth(new DateTime(2026, 7, 1), new Dictionary<DateOnly, string> { [new(2026, 7, 20)] = "海の日" });
+        var weekday = document.Entries.First(x => x.DayType == DayType.Weekday);
+        weekday.ApplyStatus(WorkStatus.CompanyHoliday);
+        weekday.CompanyHolidayName = "夏季休業";
+        weekday.Note = "連絡事項";
+        weekday.ResetToInitialState();
+
+        Assert.Equal(WorkStatus.Normal, weekday.WorkStatus);
+        Assert.Equal(9 * 60, weekday.StartMinutes);
+        Assert.Equal(17 * 60 + 30, weekday.EndMinutes);
+        Assert.Equal(60, weekday.BreakMinutes);
+        Assert.Null(weekday.WorkContent);
+        Assert.Null(weekday.CompanyHolidayName);
+        Assert.Null(weekday.Note);
+
+        var holiday = document.Entries.Single(x => x.DayType == DayType.Holiday);
+        holiday.ApplyStatus(WorkStatus.PaidLeave);
+        holiday.Note = "連絡事項";
+        holiday.ResetToInitialState();
+
+        Assert.Equal(WorkStatus.Unset, holiday.WorkStatus);
+        Assert.Null(holiday.StartMinutes);
+        Assert.Equal("海の日", holiday.Note);
+    }
 }

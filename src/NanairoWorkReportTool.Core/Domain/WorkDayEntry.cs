@@ -162,6 +162,14 @@ public partial class WorkDayEntry : ObservableObject
         BreakMinutes = null;
     }
 
+    public void ResetToInitialState()
+    {
+        WorkContent = null;
+        CompanyHolidayName = null;
+        Note = HolidayName;
+        ApplyStatus(DayType == DayType.Weekday ? WorkStatus.Normal : WorkStatus.Unset);
+    }
+
     partial void OnWorkStatusChanged(WorkStatus value)
     {
         OnPropertyChanged(nameof(WorkStatusDisplay));

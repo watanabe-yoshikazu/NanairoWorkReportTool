@@ -4,6 +4,7 @@
     <UseWPF>true</UseWPF>
     <AssemblyName>NanairoWorkReportTool</AssemblyName>
     <RootNamespace>NanairoWorkReportTool</RootNamespace>
+    <Version>1.0.1</Version>
     <ApplicationIcon />
     <PublishSingleFile>true</PublishSingleFile>
     <SelfContained>true</SelfContained>

@@ -305,6 +305,11 @@ public partial class MainWindowViewModel : ObservableObject
     public void ClearTime(IEnumerable<WorkDayEntry> entries)
     { foreach (var entry in entries) entry.ClearTime(); }
 
+    public void ResetEntries(IEnumerable<WorkDayEntry> entries)
+    {
+        foreach (var entry in entries) entry.ResetToInitialState();
+    }
+
     public void CopyPreviousContent(IEnumerable<WorkDayEntry> entries)
     {
         foreach (var entry in entries)

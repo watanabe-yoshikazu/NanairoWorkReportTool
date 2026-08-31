@@ -87,7 +87,12 @@ public sealed class OpenXmlExcelReportService : IExcelReportService
             var entry = index < document.Entries.Count ? document.Entries[index] : null;
             ClearContents(worksheetPart, row, "ABCDEFGHI");
             if (entry is null) continue;
-            SetText(worksheetPart, $"A{row}", entry.WorkStatus == WorkStatus.Normal ? entry.WorkContent ?? string.Empty : string.Empty);
+            SetText(worksheetPart, $"A{row}", entry.WorkStatus switch
+            {
+                WorkStatus.PaidLeave => "有給休暇",
+                WorkStatus.Normal => entry.WorkContent ?? string.Empty,
+                _ => string.Empty
+            });
             SetFormulaNumber(worksheetPart, $"B{row}", $"G{row}-H{row}", entry.WorkMinutes / 60d);
             SetNumber(worksheetPart, $"C{row}", entry.Date.ToDateTime(TimeOnly.MinValue).ToOADate());
             SetFormulaNumber(worksheetPart, $"D{row}", $"C{row}", entry.Date.ToDateTime(TimeOnly.MinValue).ToOADate());
@@ -95,14 +100,14 @@ public sealed class OpenXmlExcelReportService : IExcelReportService
             if (entry.EndMinutes.HasValue) SetNumber(worksheetPart, $"F{row}", entry.EndMinutes.Value / 1440d);
             SetFormulaNumber(worksheetPart, $"G{row}", $"(F{row}-E{row})*24", entry.GrossMinutes / 60d);
             SetNumber(worksheetPart, $"H{row}", (entry.BreakMinutes ?? 0) / 60d);
-            SetText(worksheetPart, $"I{row}", entry.GetReportRemark());
+            SetText(worksheetPart, $"I{row}", entry.WorkStatus == WorkStatus.PaidLeave ? string.Empty : entry.GetReportRemark());
         }
 
         SetFormulaNumber(worksheetPart, "B40", "SUM(B9:B39)", summary.ForecastMinutes / 60d);
         SetFormulaNumber(worksheetPart, "G40", "SUM(G9:G39)", document.Entries.Sum(x => x.GrossMinutes) / 60d);
         SetFormulaNumber(worksheetPart, "H40", "SUM(H9:H39)", document.Entries.Sum(x => x.BreakMinutes ?? 0) / 60d);
         SetNumber(worksheetPart, "B41", summary.LowerMinutes / 60d);
-        UpdateConditionalFormatting(worksheetPart);
+        UpdateConditionalFormatting(workbookPart, worksheetPart);
         GetWorksheet(worksheetPart).Save();
     }
 
@@ -119,7 +124,8 @@ public sealed class OpenXmlExcelReportService : IExcelReportService
         {
             var row = 9 + i;
             var entry = document.Entries[i];
-            entry.WorkContent = ReadCellText(workbookPart, part, $"A{row}");
+            if (entry.WorkStatus == WorkStatus.Normal)
+                entry.WorkContent = ReadCellText(workbookPart, part, $"A{row}");
             entry.StartMinutes = ReadTimeMinutes(workbookPart, part, $"E{row}");
             entry.EndMinutes = ReadTimeMinutes(workbookPart, part, $"F{row}");
             entry.BreakMinutes = ReadHourMinutes(workbookPart, part, $"H{row}");
@@ -230,14 +236,47 @@ public sealed class OpenXmlExcelReportService : IExcelReportService
         printArea.Text = $"'{ReportSheetName}'!$A$1:$I$40";
     }
 
-    private static void UpdateConditionalFormatting(WorksheetPart part)
+    private static void UpdateConditionalFormatting(WorkbookPart workbookPart, WorksheetPart part)
     {
-        foreach (var rule in GetWorksheet(part).Descendants<ConditionalFormattingRule>())
+        var worksheet = GetWorksheet(part);
+        foreach (var rule in worksheet.Descendants<ConditionalFormattingRule>())
         {
             var formula = rule.GetFirstChild<Formula>();
             if (formula?.Text?.Contains("祝日", StringComparison.Ordinal) == true)
-                formula.Text = "INDEX(_NanairoWorkStatus,ROW()-8)<>\"Weekday\"";
+                formula.Text = "OR(INDEX(_NanairoWorkStatus,ROW()-8)=\"CompanyHoliday\",INDEX(_NanairoWorkStatus,ROW()-8)=\"Holiday\")";
         }
+
+        var styles = workbookPart.WorkbookStylesPart?.Stylesheet
+                     ?? throw new InvalidDataException("帳票テンプレートのスタイル定義がありません。");
+        var differentialFormats = styles.DifferentialFormats ?? styles.AppendChild(new DifferentialFormats());
+        var differentialFormatId = (uint)differentialFormats.Elements<DifferentialFormat>().Count();
+        differentialFormats.Append(new DifferentialFormat(
+            new Fill(new PatternFill(
+                new ForegroundColor { Rgb = "FFFFFFFF" },
+                new BackgroundColor { Rgb = "FFFFFFFF" })
+            { PatternType = PatternValues.Solid })));
+        differentialFormats.Count = (uint)differentialFormats.Elements<DifferentialFormat>().Count();
+        styles.Save();
+
+        foreach (var rule in worksheet.Descendants<ConditionalFormattingRule>())
+            rule.Priority = (rule.Priority?.Value ?? 0) + 1;
+
+        var paidLeaveRule = new ConditionalFormattingRule
+        {
+            Type = ConditionalFormatValues.Expression,
+            FormatId = differentialFormatId,
+            Priority = 1,
+            StopIfTrue = true
+        };
+        paidLeaveRule.Append(new Formula("INDEX(_NanairoWorkStatus,ROW()-8)=\"PaidLeave\""));
+        var paidLeaveFormatting = new ConditionalFormatting
+        {
+            SequenceOfReferences = new ListValue<StringValue> { InnerText = "A9:I39" }
+        };
+        paidLeaveFormatting.Append(paidLeaveRule);
+        var pageMargins = worksheet.GetFirstChild<PageMargins>();
+        if (pageMargins is null) worksheet.Append(paidLeaveFormatting);
+        else worksheet.InsertBefore(paidLeaveFormatting, pageMargins);
     }
 
     private static string BuildHelperCode(WorkDayEntry entry) => entry.WorkStatus switch
