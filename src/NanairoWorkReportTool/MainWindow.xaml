@@ -83,9 +83,8 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Border Width="38" Height="38" CornerRadius="9" Background="{StaticResource AccentBrush}" Margin="0,0,12,0">
-                        <TextBlock Text="N" Foreground="White" FontSize="18" FontWeight="SemiBold"
-                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    <Border Width="38" Height="38" CornerRadius="9" Background="Transparent" Margin="0,0,12,0" ClipToBounds="True">
+                        <Image Source="/NanairoWorkReportTool;component/Assets/AppIcon.png" Stretch="UniformToFill"/>
                     </Border>
                     <StackPanel VerticalAlignment="Center">
                         <StackPanel Orientation="Horizontal">

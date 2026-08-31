@@ -5,7 +5,7 @@
     <AssemblyName>NanairoWorkReportTool</AssemblyName>
     <RootNamespace>NanairoWorkReportTool</RootNamespace>
     <Version>1.0.2</Version>
-    <ApplicationIcon />
+    <ApplicationIcon>Assets\AppIcon.ico</ApplicationIcon>
     <PublishSingleFile>true</PublishSingleFile>
     <SelfContained>true</SelfContained>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
@@ -15,6 +15,9 @@
     <ProjectReference Include="..\NanairoWorkReportTool.Core\NanairoWorkReportTool.Core.csproj" />
     <ProjectReference Include="..\NanairoWorkReportTool.Infrastructure\NanairoWorkReportTool.Infrastructure.csproj" />
     <PackageReference Include="CommunityToolkit.Mvvm" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Assets\AppIcon.png" />
   </ItemGroup>
 </Project>
 
