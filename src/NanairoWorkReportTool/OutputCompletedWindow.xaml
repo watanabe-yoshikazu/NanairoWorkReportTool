@@ -1,18 +1,53 @@
 <Window x:Class="NanairoWorkReportTool.OutputCompletedWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="出力完了" Width="620" Height="260" ResizeMode="NoResize" WindowStartupLocation="CenterOwner" Background="#F3F4F6">
-    <Border Margin="14" Padding="18" Background="White" CornerRadius="10" BorderBrush="#D1D5DB" BorderThickness="1">
+        Title="出力完了" Width="640" Height="330" MinHeight="330" ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner" Background="{StaticResource CanvasBrush}">
+    <Border Margin="18" Padding="22" Background="White" CornerRadius="10"
+            BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
         <Grid>
-            <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-            <TextBlock Text="✓ 出力が完了しました" FontSize="22" FontWeight="Bold" Foreground="#15803D"/>
-            <TextBlock Grid.Row="1" Text="{Binding ExcelPath}" Margin="0,14,0,0" TextWrapping="Wrap"/>
-            <TextBlock Grid.Row="2" Text="{Binding PdfPath}" Margin="0,4,0,0" TextWrapping="Wrap"/>
-            <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right">
-                <Button Content="Excelを開く" Click="OpenExcel_Click"/>
-                <Button x:Name="OpenPdfButton" Content="PDFを開く" Click="OpenPdf_Click"/>
-                <Button Content="保存先を開く" Click="OpenFolder_Click"/>
-                <Button Content="閉じる" IsDefault="True" Click="Close_Click"/>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <StackPanel Orientation="Horizontal">
+                <Border Width="34" Height="34" CornerRadius="17" Background="{StaticResource SuccessSoftBrush}" Margin="0,0,12,0">
+                    <TextBlock Text="✓" FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource SuccessBrush}"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <StackPanel>
+                    <TextBlock Text="出力が完了しました" FontSize="19" FontWeight="SemiBold"/>
+                    <TextBlock Text="ファイルを保存先に作成しました。" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,3,0,0"/>
+                </StackPanel>
+            </StackPanel>
+
+            <Border Grid.Row="1" Background="{StaticResource SurfaceMutedBrush}" BorderBrush="{StaticResource BorderBrush}"
+                    BorderThickness="1" CornerRadius="6" Padding="12,9" Margin="0,18,0,0">
+                <Grid>
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="54"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                    <TextBlock Text="Excel" Foreground="{StaticResource TextSecondaryBrush}" FontWeight="SemiBold"/>
+                    <TextBlock Grid.Column="1" Text="{Binding ExcelPath}" TextTrimming="CharacterEllipsis" ToolTip="{Binding ExcelPath}"/>
+                </Grid>
+            </Border>
+
+            <Border Grid.Row="2" Background="{StaticResource SurfaceMutedBrush}" BorderBrush="{StaticResource BorderBrush}"
+                    BorderThickness="1" CornerRadius="6" Padding="12,9" Margin="0,7,0,0">
+                <Grid>
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="54"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                    <TextBlock Text="PDF" Foreground="{StaticResource TextSecondaryBrush}" FontWeight="SemiBold"/>
+                    <TextBlock Grid.Column="1" Text="{Binding PdfPath}" TextTrimming="CharacterEllipsis" ToolTip="{Binding PdfPath}"/>
+                </Grid>
+            </Border>
+
+            <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,18,0,0">
+                <Button Content="保存先を開く" Click="OpenFolder_Click" Style="{StaticResource SubtleButton}" Margin="0,0,6,0"/>
+                <Button Content="Excel を開く" Click="OpenExcel_Click" Margin="0,0,6,0"/>
+                <Button x:Name="OpenPdfButton" Content="PDF を開く" Click="OpenPdf_Click" Margin="0,0,6,0"/>
+                <Button Content="閉じる" IsDefault="True" Click="Close_Click" Style="{StaticResource PrimaryButton}"/>
             </StackPanel>
         </Grid>
     </Border>
