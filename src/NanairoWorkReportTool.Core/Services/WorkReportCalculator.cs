@@ -34,7 +34,10 @@ public sealed class WorkReportCalculator : IWorkReportCalculator
 
     public MonthlySummary Calculate(WorkReportDocument document, DateOnly today)
     {
-        var weekdayWorkDays = document.Entries.Count(IsBaselineWorkday);
+        var baselineCandidateDays = document.Entries.Count(IsBaselineCandidateDay);
+        var baselineCompanyHolidayDays = document.Entries.Count(entry =>
+            IsBaselineCandidateDay(entry) && entry.WorkStatus == WorkStatus.CompanyHoliday);
+        var weekdayWorkDays = baselineCandidateDays - baselineCompanyHolidayDays;
         var baseline = weekdayWorkDays * 450;
         var lower = baseline - 1_200;
         var upper = baseline + 1_200;
@@ -42,16 +45,15 @@ public sealed class WorkReportCalculator : IWorkReportCalculator
         var forecast = document.Entries.Where(x => x.WorkStatus == WorkStatus.Normal).Sum(x => x.WorkMinutes);
         var buffer = forecast - lower;
         return new MonthlySummary(
-            weekdayWorkDays,
+            weekdayWorkDays, baselineCandidateDays, baselineCompanyHolidayDays,
             document.Entries.Count(x => x.WorkStatus == WorkStatus.CompanyHoliday),
             document.Entries.Count(x => x.WorkStatus == WorkStatus.PaidLeave),
             baseline, lower, upper, actual, forecast, forecast - baseline, buffer, upper - forecast,
             Math.Max(0, buffer / 450), forecast >= lower && forecast <= upper);
     }
 
-    private static bool IsBaselineWorkday(WorkDayEntry entry)
+    private static bool IsBaselineCandidateDay(WorkDayEntry entry)
         => entry.Date.DayOfWeek is not DayOfWeek.Saturday and not DayOfWeek.Sunday
-           && entry.DayType != DayType.Holiday
-           && entry.WorkStatus != WorkStatus.CompanyHoliday;
+           && entry.DayType != DayType.Holiday;
 }
 

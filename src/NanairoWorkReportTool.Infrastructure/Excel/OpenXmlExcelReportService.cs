@@ -106,10 +106,27 @@ public sealed class OpenXmlExcelReportService : IExcelReportService
         SetFormulaNumber(worksheetPart, "B40", "SUM(B9:B39)", summary.ForecastMinutes / 60d);
         SetFormulaNumber(worksheetPart, "G40", "SUM(G9:G39)", document.Entries.Sum(x => x.GrossMinutes) / 60d);
         SetFormulaNumber(worksheetPart, "H40", "SUM(H9:H39)", document.Entries.Sum(x => x.BreakMinutes ?? 0) / 60d);
-        SetNumber(worksheetPart, "B41", summary.LowerMinutes / 60d);
+        SetText(worksheetPart, "A41", BuildVerificationSummary(summary));
+        for (var column = 'B'; column <= 'I'; column++) ClearContents(worksheetPart, 41, column.ToString());
+        EnsureMergedCell(worksheetPart, "A41:I41");
+        var verificationRow = GetWorksheet(worksheetPart).GetFirstChild<SheetData>()?
+            .Elements<Row>().FirstOrDefault(row => row.RowIndex?.Value == 41U);
+        if (verificationRow is not null)
+        {
+            verificationRow.Height = 22.5D;
+            verificationRow.CustomHeight = true;
+        }
         UpdateConditionalFormatting(workbookPart, worksheetPart);
         GetWorksheet(worksheetPart).Save();
     }
+
+    private static string BuildVerificationSummary(MonthlySummary summary)
+        => $"基準日数：{summary.WeekdayWorkDays}日（稼働対象日{summary.BaselineCandidateDays}日－公休日{summary.BaselineCompanyHolidayDays}日）、" +
+           $"基準時間：{FormatHours(summary.BaselineMinutes, true)}H±{FormatHours(summary.UpperMinutes - summary.BaselineMinutes, false)}H、" +
+           $"稼働実績：{FormatHours(summary.ForecastMinutes, true)}H";
+
+    private static string FormatHours(int minutes, bool minimumOneDecimal)
+        => (minutes / 60d).ToString(minimumOneDecimal ? "0.0#" : "0.##", CultureInfo.InvariantCulture);
 
     private static void OverlayVisibleCells(WorkbookPart workbookPart, WorkReportDocument document)
     {
@@ -219,7 +236,7 @@ public sealed class OpenXmlExcelReportService : IExcelReportService
         }
         pageSetup.PaperSize = 9U;
         pageSetup.Orientation = OrientationValues.Portrait;
-        pageSetup.Scale = 74U;
+        pageSetup.Scale = 72U;
 
         var workbook = workbookPart.Workbook ?? throw new InvalidDataException("Workbook定義を読み取れません。");
         var sheets = workbook.Sheets?.Elements<Sheet>().ToList()
@@ -233,7 +250,26 @@ public sealed class OpenXmlExcelReportService : IExcelReportService
             printArea = new DefinedName { Name = "_xlnm.Print_Area", LocalSheetId = localSheetId };
             definedNames.Append(printArea);
         }
-        printArea.Text = $"'{ReportSheetName}'!$A$1:$I$40";
+        printArea.Text = $"'{ReportSheetName}'!$A$1:$I$41";
+    }
+
+    private static void EnsureMergedCell(WorksheetPart part, string reference)
+    {
+        var worksheet = GetWorksheet(part);
+        var mergeCells = worksheet.GetFirstChild<MergeCells>();
+        if (mergeCells is null)
+        {
+            mergeCells = new MergeCells();
+            var conditionalFormatting = worksheet.GetFirstChild<ConditionalFormatting>();
+            if (conditionalFormatting is null) worksheet.Append(mergeCells);
+            else worksheet.InsertBefore(mergeCells, conditionalFormatting);
+        }
+
+        if (!mergeCells.Elements<MergeCell>().Any(cell => cell.Reference?.Value == reference))
+        {
+            mergeCells.Append(new MergeCell { Reference = reference });
+            mergeCells.Count = (uint)mergeCells.Elements<MergeCell>().Count();
+        }
     }
 
     private static void UpdateConditionalFormatting(WorkbookPart workbookPart, WorksheetPart part)

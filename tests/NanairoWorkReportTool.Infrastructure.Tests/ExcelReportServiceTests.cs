@@ -41,9 +41,11 @@ public sealed class ExcelReportServiceTests
                 Assert.DoesNotContain(worksheet.Descendants<Formula>(), x => x.Text.Contains("$J", StringComparison.Ordinal));
                 Assert.Equal(SheetStateValues.VeryHidden, metadataSheet.State?.Value);
                 Assert.Equal(OrientationValues.Portrait, pageSetup.Orientation?.Value);
-                Assert.Equal(74U, pageSetup.Scale?.Value);
+                Assert.Equal(72U, pageSetup.Scale?.Value);
                 var definedNames = workbook.DefinedNames ?? throw new InvalidDataException("定義名がありません。");
-                Assert.Contains(definedNames.Elements<DefinedName>(), x => x.Name == "_xlnm.Print_Area" && x.Text.Contains("$A$1:$I$40"));
+                Assert.Contains(definedNames.Elements<DefinedName>(), x => x.Name == "_xlnm.Print_Area" && x.Text.Contains("$A$1:$I$41"));
+                Assert.Equal("基準日数：22日（稼働対象日22日－公休日0日）、基準時間：165.0H±20H、稼働実績：157.5H", CellText(worksheet, "A41"));
+                Assert.Contains(worksheet.Descendants<MergeCell>(), cell => cell.Reference?.Value == "A41:I41");
                 Assert.Equal("有給休暇", CellText(worksheet, "A9"));
                 Assert.Equal(string.Empty, CellText(worksheet, "I9"));
                 var paidLeaveRule = Assert.Single(worksheet.Descendants<ConditionalFormattingRule>(), rule =>

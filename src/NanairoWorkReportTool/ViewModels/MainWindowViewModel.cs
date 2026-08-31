@@ -521,7 +521,7 @@ public partial class MainWindowViewModel : ObservableObject
     }
 
     private static string FormatHours(int minutes) => (minutes / 60m).ToString("0.##");
-    private static MonthlySummary EmptySummary() => new(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false);
+    private static MonthlySummary EmptySummary() => new(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false);
     private static void ReplaceCollection<T>(ObservableCollection<T> target, IEnumerable<T> values)
     { target.Clear(); foreach (var value in values) target.Add(value); }
 }

@@ -42,9 +42,26 @@ public sealed class WorkReportCalculatorTests
         weekdays[1].ApplyStatus(WorkStatus.PaidLeave);
         var result = _calculator.Calculate(document, new DateOnly(2026, 7, 31));
         Assert.Equal(initial.BaselineMinutes - 450, result.BaselineMinutes);
+        Assert.Equal(initial.BaselineCandidateDays, result.BaselineCandidateDays);
+        Assert.Equal(1, result.BaselineCompanyHolidayDays);
         Assert.Equal(1, result.CompanyHolidayDays);
         Assert.Equal(1, result.PaidLeaveDays);
         Assert.Equal(initial.ForecastMinutes - 900, result.ForecastMinutes);
+    }
+
+    [Fact]
+    public void Calculate_DoesNotCountWeekendCompanyHolidayInBaselineBreakdown()
+    {
+        var document = _calculator.CreateMonth(new DateTime(2026, 7, 1), new Dictionary<DateOnly, string>());
+        var weekend = document.Entries.First(entry => entry.DayType == DayType.Saturday);
+        weekend.ApplyStatus(WorkStatus.CompanyHoliday);
+        weekend.CompanyHolidayName = "会社休業日";
+
+        var result = _calculator.Calculate(document, new DateOnly(2026, 7, 31));
+
+        Assert.Equal(1, result.CompanyHolidayDays);
+        Assert.Equal(0, result.BaselineCompanyHolidayDays);
+        Assert.Equal(result.BaselineCandidateDays, result.WeekdayWorkDays);
     }
 
     [Fact]

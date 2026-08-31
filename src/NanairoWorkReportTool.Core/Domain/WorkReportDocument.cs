@@ -21,6 +21,8 @@ public sealed record HolidayInfo(DateOnly Date, string Name);
 
 public sealed record MonthlySummary(
     int WeekdayWorkDays,
+    int BaselineCandidateDays,
+    int BaselineCompanyHolidayDays,
     int CompanyHolidayDays,
     int PaidLeaveDays,
     int BaselineMinutes,
