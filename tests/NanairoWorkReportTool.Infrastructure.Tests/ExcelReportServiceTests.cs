@@ -48,6 +48,8 @@ public sealed class ExcelReportServiceTests
                 Assert.Contains(worksheet.Descendants<MergeCell>(), cell => cell.Reference?.Value == "A41:I41");
                 Assert.Equal("有給休暇", CellText(worksheet, "A9"));
                 Assert.Equal(string.Empty, CellText(worksheet, "I9"));
+                Assert.Null(worksheet.Descendants<Cell>().Single(cell => cell.CellReference?.Value == "H9").CellValue);
+                Assert.Null(worksheet.Descendants<Cell>().Single(cell => cell.CellReference?.Value == "H12").CellValue);
                 var paidLeaveRule = Assert.Single(worksheet.Descendants<ConditionalFormattingRule>(), rule =>
                     rule.GetFirstChild<Formula>()?.Text.Contains("PaidLeave", StringComparison.Ordinal) == true);
                 Assert.True(paidLeaveRule.StopIfTrue?.Value);
@@ -67,10 +69,30 @@ public sealed class ExcelReportServiceTests
                 var pageMargins = worksheet.GetFirstChild<PageMargins>() ?? throw new InvalidDataException("ページ余白設定がありません。");
                 Assert.True(elements.IndexOf(paidLeaveRule.Parent!) < elements.IndexOf(pageMargins));
             }
+            using (var spreadsheet = SpreadsheetDocument.Open(path, true))
+            {
+                var workbook = spreadsheet.WorkbookPart?.Workbook ?? throw new InvalidDataException("Workbook定義がありません。");
+                var reportSheet = workbook.Sheets?.Elements<Sheet>().Single(x => x.Name == "作業報告書")
+                                  ?? throw new InvalidDataException("作業報告書シートがありません。");
+                var reportId = reportSheet.Id?.Value ?? throw new InvalidDataException("作業報告書シートIDがありません。");
+                var worksheet = ((WorksheetPart)spreadsheet.WorkbookPart!.GetPartById(reportId)).Worksheet
+                                ?? throw new InvalidDataException("Worksheet定義がありません。");
+                var legacyWeekendBreak = worksheet.Descendants<Cell>().Single(cell => cell.CellReference?.Value == "H12");
+                legacyWeekendBreak.DataType = CellValues.Number;
+                legacyWeekendBreak.CellValue = new CellValue("0");
+                worksheet.Save();
+            }
             var restored = await service.ImportAsync(path);
             Assert.Equal(document.ReporterName, restored.ReporterName);
             Assert.Equal(document.Entries[0].WorkStatus, restored.Entries[0].WorkStatus);
             Assert.Equal(document.Entries[0].WorkContent, restored.Entries[0].WorkContent);
+            var restoredWeekend = Assert.Single(restored.Entries, entry => entry.Date == new DateOnly(2026, 7, 4));
+            Assert.Null(restoredWeekend.StartMinutes);
+            Assert.Null(restoredWeekend.EndMinutes);
+            Assert.Null(restoredWeekend.BreakMinutes);
+            var issues = new ReportValidator(calculator).Validate(restored, new DateOnly(2026, 7, 31));
+            Assert.DoesNotContain(issues, issue =>
+                issue.Date == restoredWeekend.Date && issue.Message == "公休日・未設定の日には勤務時間を設定できません。");
         }
         finally { Directory.Delete(directory, true); }
     }

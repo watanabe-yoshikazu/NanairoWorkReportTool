@@ -99,7 +99,7 @@ public sealed class OpenXmlExcelReportService : IExcelReportService
             if (entry.StartMinutes.HasValue) SetNumber(worksheetPart, $"E{row}", entry.StartMinutes.Value / 1440d);
             if (entry.EndMinutes.HasValue) SetNumber(worksheetPart, $"F{row}", entry.EndMinutes.Value / 1440d);
             SetFormulaNumber(worksheetPart, $"G{row}", $"(F{row}-E{row})*24", entry.GrossMinutes / 60d);
-            SetNumber(worksheetPart, $"H{row}", (entry.BreakMinutes ?? 0) / 60d);
+            if (entry.BreakMinutes.HasValue) SetNumber(worksheetPart, $"H{row}", entry.BreakMinutes.Value / 60d);
             SetText(worksheetPart, $"I{row}", entry.WorkStatus == WorkStatus.PaidLeave ? string.Empty : entry.GetReportRemark());
         }
 
@@ -142,10 +142,16 @@ public sealed class OpenXmlExcelReportService : IExcelReportService
             var row = 9 + i;
             var entry = document.Entries[i];
             if (entry.WorkStatus == WorkStatus.Normal)
+            {
                 entry.WorkContent = ReadCellText(workbookPart, part, $"A{row}");
-            entry.StartMinutes = ReadTimeMinutes(workbookPart, part, $"E{row}");
-            entry.EndMinutes = ReadTimeMinutes(workbookPart, part, $"F{row}");
-            entry.BreakMinutes = ReadHourMinutes(workbookPart, part, $"H{row}");
+                entry.StartMinutes = ReadTimeMinutes(workbookPart, part, $"E{row}");
+                entry.EndMinutes = ReadTimeMinutes(workbookPart, part, $"F{row}");
+                entry.BreakMinutes = ReadHourMinutes(workbookPart, part, $"H{row}");
+            }
+            else
+            {
+                entry.ClearTime();
+            }
             var remark = ReadCellText(workbookPart, part, $"I{row}");
             if (entry.WorkStatus == WorkStatus.CompanyHoliday) entry.CompanyHolidayName = remark;
             else if (entry.WorkStatus == WorkStatus.Normal) entry.Note = remark;
